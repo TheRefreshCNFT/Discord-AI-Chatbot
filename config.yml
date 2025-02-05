@@ -18,7 +18,7 @@ DEFAULT_INSTRUCTION: dan # Specify the instruction prompt to use (check 'instruc
 # To add custom prompts, create a .txt file like 'custom.txt' in `instructions` folder and set INSTRUCTIONS as 'custom'
 
 Discord: https://discord.gg/aWHvyjSh7e
-Github: https://github.com/mishalhossin/Discord-AI-Chatbot
+Github: https://github.com/TheRefreshCNFT/Discord-AI-Chatbot
 
 TRIGGER:
   - chatbot
