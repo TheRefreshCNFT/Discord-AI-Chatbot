@@ -4,12 +4,13 @@ import time
 import os
 import random
 import json
+import asyncio
 from langdetect import detect
 from gtts import gTTS
 from urllib.parse import quote
 from bot_utilities.config_loader import load_current_language, config
 from openai import AsyncOpenAI
-from duckduckgo_search import AsyncDDGS
+from duckduckgo_search import DDGS
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -49,7 +50,7 @@ async def generate_response(instructions, history):
     ]
     response = await client.chat.completions.create(
         model=config['MODEL_ID'],
-        messages=messages,        
+        messages=messages,
         tools=tools,
         tool_choice="auto",
     )
@@ -80,21 +81,30 @@ async def generate_response(instructions, history):
         second_response = await client.chat.completions.create(
             model=config['MODEL_ID'],
             messages=messages
-        ) 
+        )
         return second_response.choices[0].message.content
     return response_message.content
+
+import asyncio
+from duckduckgo_search import DDGS
 
 async def duckduckgotool(query) -> str:
     if config['INTERNET_ACCESS']:
         return "internet access has been disabled by user"
     blob = ''
-    results = await AsyncDDGS(proxy=None).text(query, max_results=6)
     try:
+        # Wrap the synchronous call in asyncio.to_thread.
+        results = await asyncio.to_thread(lambda: DDGS(proxy=None).text(query, max_results=6))
         for index, result in enumerate(results[:6]):  # Limiting to 6 results
-            blob += f'[{index}] Title : {result["title"]}\nSnippet : {result["body"]}\n\n\n Provide a cohesive response base on provided Search results'
+            blob += (
+                f'[{index}] Title: {result["title"]}\n'
+                f'Snippet: {result["body"]}\n\n\n'
+                "Provide a cohesive response based on the provided search results\n"
+            )
     except Exception as e:
         blob += f"Search error: {e}\n"
     return blob
+
 
 
 async def poly_image_gen(session, prompt):
@@ -129,7 +139,7 @@ async def generate_image_prodia(prompt, model, sampler, seed, neg):
             async with session.get(url, params=params) as response:
                 data = await response.json()
                 return data['job']
-            
+
     job_id = await create_job(prompt, model, sampler, seed, neg)
     url = f'https://api.prodia.com/job/{job_id}'
     headers = {
